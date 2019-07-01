@@ -1,4 +1,5 @@
 var request = require('request');
+var rp = require("request-promise-native");
 module.exports = function (controller) {
 
     function checkValidRestQuery(botkitText) {
@@ -17,22 +18,21 @@ module.exports = function (controller) {
         //"REST: query here".substring("REST: ".length) == "query here"
     }
 
-
-    // chatbot will respond upon recieving "rest" (case insensitive)
+    // chatbot will respond upon recieving query beginning with "REST: " (case sensitive)
     controller.hears(async (message) => checkValidRestQuery(message.text) === true, ['message'], async (bot, message) => {
         var botkitInput = extractQuery(message.text);
         // the rest query to process
         await bot.reply(message, "Processing REST request: \'" + botkitInput + "\'");
-        // Extract the actual rest query 
         var headers = { 'Accept': 'application/json', 'Content-type': 'text/plain; charset=utf-8', "body": botkitInput }
-        request.post("http://localhost:8080/ce-store/special/hudson/interpreter", headers, (error, res, body) => {
-            if (error) {
-                console.log("the error is " + error);
-            } else {
+        // request wrapped in promise
+        rp.post("http://localhost:8080/ce-store/special/hudson/interpreter", headers)
+            .then(function (body) {
                 console.log("The REST API response: \n");
                 console.log(body);
-            }
-        });
+            })
+            .catch(function (error) {
+                console.error("the error is " + error);
+            });
         await bot.reply(message, "Check console log for output");
     });
 }
