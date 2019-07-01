@@ -13,9 +13,8 @@ module.exports = function (controller) {
 
     function extractQuery(botkitText) {
         var restQueryMarker = "REST: ";
-        return botkitText.substring(restQueryMarker.length)
-        //tf.substring(find.length)
         //"REST: query here".substring("REST: ".length) == "query here"
+        return botkitText.substring(restQueryMarker.length)
     }
 
     // chatbot will respond upon recieving query beginning with "REST: " (case sensitive)
@@ -24,15 +23,13 @@ module.exports = function (controller) {
         // the rest query to process
         await bot.reply(message, "Processing REST request: \'" + botkitInput + "\'");
         var headers = { 'Accept': 'application/json', 'Content-type': 'text/plain; charset=utf-8', "body": botkitInput }
-        // request wrapped in promise
-        rp.post("http://localhost:8080/ce-store/special/hudson/interpreter", headers)
-            .then(function (body) {
-                console.log("The REST API response: \n");
-                console.log(body);
-            })
+        // request wrapped in await(promise) function, to make POST response available
+        response = await rp.post("http://localhost:8080/ce-store/special/hudson/interpreter", headers)
             .catch(function (error) {
-                console.error("the error is " + error);
+                console.error("POST query not successful, error is \n" + error)
+                return ("ERROR:\n" + error);
             });
-        await bot.reply(message, "Check console log for output");
+        // chatbot replies with POST reponse (or in place html error, tested with url error)
+        await bot.reply(message, response);
     });
 }
